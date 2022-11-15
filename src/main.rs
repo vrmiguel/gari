@@ -5,9 +5,11 @@ use gari::Result;
 
 use walkdir::{DirEntry, WalkDir};
 
-const CLEANERS: &[&dyn Cleanable] = &[&CargoProject];
+const CLEANERS: &[&dyn Cleanable] = &[&CargoProject, &CMakeProject, &ZigProject];
 
 pub struct CargoProject;
+pub struct CMakeProject;
+pub struct ZigProject;
 
 impl Cleanable for CargoProject {
     fn to_remove(&self) -> &'static [&'static str] {
@@ -15,11 +17,39 @@ impl Cleanable for CargoProject {
     }
 
     fn indicators(&self) -> &'static [&'static str] {
-        &["Cargo.toml"]
+        &["Cargo.toml", "src/"]
     }
 
     fn context(&self) -> &'static str {
-        "Cargo (Rust)"
+        "Cargo"
+    }
+}
+
+impl Cleanable for CMakeProject {
+    fn indicators(&self) -> &'static [&'static str] {
+        &["CMakeLists.txt"]
+    }
+
+    fn to_remove(&self) -> &'static [&'static str] {
+        &["build"]
+    }
+
+    fn context(&self) -> &'static str {
+        "CMake"
+    }
+}
+
+impl Cleanable for ZigProject {
+    fn indicators(&self) -> &'static [&'static str] {
+        &["build.zig", "src/"]
+    }
+
+    fn to_remove(&self) -> &'static [&'static str] {
+        &["zig-out", "zig-cache"]
+    }
+
+    fn context(&self) -> &'static str {
+        "Zig"
     }
 }
 

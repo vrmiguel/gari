@@ -35,7 +35,7 @@ pub trait Cleanable {
     /// the [indicators](Cleanable::indicators), if so, removes the files given by [`to_remove`](Cleanable::to_remove).
     fn try_cleaning(&self, path: &Path) -> Result<()> {
         if self.contains_indicators(path)? {
-            println!("Cleaning up in {} ({})", path.display(), self.context());
+            println!("{} project found in {}", self.context(), path.display());
             self.clean(path)?;
         }
 
@@ -46,9 +46,9 @@ pub trait Cleanable {
     fn clean(&self, path: &Path) -> Result<()> {
         let previous_folder = cd_into_and_return_previous(path)?;
 
-        for path in self.to_remove() {
-            println!("Attempting to remove {}", path);
-            fs::remove_dir_all(path)?;
+        for path_to_trash in self.to_remove() {
+            println!("Attempting to remove {}/{}", path.display(), path_to_trash);
+            fs::remove_dir_all(path_to_trash)?;
         }
 
         cd_into(&previous_folder)?;
