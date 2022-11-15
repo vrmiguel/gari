@@ -1,9 +1,9 @@
 use std::{env, ffi::OsString};
 
 use gari::Cleanable;
-use walkdir::{DirEntry, WalkDir};
+use gari::Result;
 
-pub type Result<T> = anyhow::Result<T>;
+use walkdir::{DirEntry, WalkDir};
 
 const CLEANERS: &[&dyn Cleanable] = &[&CargoProject];
 
@@ -16,6 +16,10 @@ impl Cleanable for CargoProject {
 
     fn indicators(&self) -> &'static [&'static str] {
         &["Cargo.toml"]
+    }
+
+    fn context(&self) -> &'static str {
+        "Cargo (Rust)"
     }
 }
 

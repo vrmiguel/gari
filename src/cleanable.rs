@@ -10,13 +10,14 @@ pub trait Cleanable {
     ///
     /// For example, Rust projects very often contain a `Cargo.toml` file, which is an indicator that a `target` folder
     /// in the same directory could be deleted in order to free up storage.
-    // const INDICATORS: &'static [&'static str];
-    // const FOLDERS_TO_CLEAN: &'static [&'static str];
     fn indicators(&self) -> &'static [&'static str];
 
     /// If the folder given by path [contains the indicator](Cleanable::contains_indicators),
     /// [to_remove](Cleanable::to_remove) indicates the file or folder that should/could be deleted
     fn to_remove(&self) -> &'static [&'static str];
+
+    /// The context for what we're trashing (e.g. indicates if we're trashing a Rust project, a TypeScript project, and so on).
+    fn context(&self) -> &'static str;
 
     /// Checks if the folder given by `path` contains the [`indicator`](Cleanable::indicators) folders or files.
     fn contains_indicators(&self, path: &Path) -> Result<bool> {
@@ -34,8 +35,10 @@ pub trait Cleanable {
     /// the [indicators](Cleanable::indicators), if so, removes the files given by [`to_remove`](Cleanable::to_remove).
     fn try_cleaning(&self, path: &Path) -> Result<()> {
         if self.contains_indicators(path)? {
+            println!("Cleaning up in {} ({})", path.display(), self.context());
             self.clean(path)?;
         }
+
         Ok(())
     }
 
@@ -43,8 +46,9 @@ pub trait Cleanable {
     fn clean(&self, path: &Path) -> Result<()> {
         let previous_folder = cd_into_and_return_previous(path)?;
 
-        for folder in self.to_remove().iter() {
-            fs::remove_dir_all(folder)?;
+        for path in self.to_remove() {
+            println!("Attempting to remove {}", path);
+            fs::remove_dir_all(path)?;
         }
 
         cd_into(&previous_folder)?;

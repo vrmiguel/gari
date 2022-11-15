@@ -3,23 +3,19 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use anyhow::Context;
 
-use crate::Result;
+use crate::{Result, Error};
 
 pub fn cd_into(path: &Path) -> Result<()> {
-    env::set_current_dir(path)
-        .with_context(|| format!("Failed to cd into '{}'", path.display()))?;
-
-    Ok(())
+    env::set_current_dir(path).map_err(|_| Error::ChangeDir(path.into()))
 }
 
 pub fn cd_into_and_return_previous(path: &Path) -> Result<PathBuf> {
     // Save the folder we are currently in before changing it
-    let previous_dir = env::current_dir().with_context(|| "Failed to read current directory.")?;
+    let previous_dir = env::current_dir().map_err(|_| Error::Cwd)?;
 
     // Set the current directory to be the one pointed to by `path`
-    cd_into(path)?;
+    cd_into(path)?; 
 
     // Return the folder we were in before
     Ok(previous_dir)
