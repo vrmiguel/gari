@@ -1,5 +1,5 @@
 mod cleanable;
-pub mod utils;
+mod utils;
 
 use std::path::PathBuf;
 

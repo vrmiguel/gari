@@ -1,5 +1,8 @@
-use std::{env, ffi::OsString};
+mod cli;
 
+use std::path::PathBuf;
+
+use cli::parse_cli;
 use gari::Cleanable;
 use gari::Result;
 
@@ -53,7 +56,7 @@ impl Cleanable for ZigProject {
     }
 }
 
-fn clean(path: OsString) -> Result<()> {
+fn clean(path: PathBuf, dry_run: bool) -> Result<()> {
     #[inline(always)]
     fn entry_is_directory(entry: &DirEntry) -> bool {
         entry.path().is_dir()
@@ -66,15 +69,19 @@ fn clean(path: OsString) -> Result<()> {
         let entry = entry?;
         let path = entry.path();
         for cleaner in CLEANERS {
-            cleaner.try_cleaning(path)?;
+            cleaner.try_cleaning(path, dry_run)?;
         }
     }
     Ok(())
 }
 
 fn main() -> Result<()> {
-    for file in env::args_os().skip(1) {
-        clean(file)?;
+    let cli = parse_cli();
+
+    dbg!(&cli.paths);
+
+    for file in cli.paths {
+        clean(file, cli.check)?;
     }
 
     Ok(())

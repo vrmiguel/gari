@@ -9,3 +9,9 @@ edition = "2021"
 walkdir = "2.3.2"
 fs-err = "2.6.0"
 thiserror = "1.0.37"
+clap = { version = "4.5.32", features = ["derive"] }
+
+[dependencies.byte-unit]
+version = "5.1.6"
+default-features = false
+features = ["byte"]
