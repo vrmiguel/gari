@@ -1,10 +1,11 @@
+// TODO: add concept of folders it should never go into, e.g. `/Library` in macOS
+
 mod cli;
 
 use std::path::PathBuf;
 
 use cli::parse_cli;
-use gari::Cleanable;
-use gari::Result;
+use gari::{Cleanable, Result};
 
 use walkdir::{DirEntry, WalkDir};
 
@@ -77,8 +78,6 @@ fn clean(path: PathBuf, dry_run: bool) -> Result<()> {
 
 fn main() -> Result<()> {
     let cli = parse_cli();
-
-    dbg!(&cli.paths);
 
     for file in cli.paths {
         clean(file, cli.check)?;

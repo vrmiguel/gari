@@ -1,24 +1,22 @@
 use std::ops::Not;
+use std::os::unix::fs::MetadataExt;
 use std::path::Path;
 
 use byte_unit::Byte;
 use fs_err as fs;
+use walkdir::WalkDir;
 
-use crate::utils::{cd_into, cd_into_and_return_previous};
 use crate::Result;
 
 pub fn get_directory_size(path: &Path) -> Result<u64> {
     let mut total_size = 0;
 
     if path.is_dir() {
-        for entry in fs::read_dir(path)? {
+        for entry in WalkDir::new(path).into_iter() {
             let entry = entry?;
-            let path = entry.path();
-
-            if path.is_dir() {
-                total_size += get_directory_size(&path)?;
-            } else {
-                total_size += entry.metadata()?.len();
+            let metadata = entry.metadata()?;
+            if metadata.is_file() || metadata.is_symlink() {
+                total_size += metadata.size()
             }
         }
     }
@@ -42,14 +40,9 @@ pub trait Cleanable {
 
     /// Checks if the folder given by `path` contains the [`indicator`](Cleanable::indicators) folders or files.
     fn contains_indicators(&self, path: &Path) -> Result<bool> {
-        let previous_dir = cd_into_and_return_previous(path)?;
+        let mut indicators = self.indicators().iter().chain(self.to_remove().iter());
 
-        let mut files = self.indicators().iter().chain(self.to_remove().iter());
-
-        let contains_indicators = files.all(|x| Path::new(x).exists());
-
-        // Go back to the previous directory
-        cd_into(&previous_dir)?;
+        let contains_indicators = indicators.all(|indicator| path.join(indicator).exists());
 
         Ok(contains_indicators)
     }
@@ -63,7 +56,7 @@ pub trait Cleanable {
                 "{} project found in {} ({})",
                 self.context(),
                 path.display(),
-                Byte::from_u64(directory_size)
+                Byte::from_u64(directory_size).get_appropriate_unit(byte_unit::UnitType::Decimal)
             );
 
             if dry_run.not() {
@@ -76,14 +69,12 @@ pub trait Cleanable {
 
     /// Removes the folders or files given by [`to_remove`](Cleanable::to_remove).
     fn clean(&self, path: &Path) -> Result<()> {
-        let previous_folder = cd_into_and_return_previous(path)?;
-
         for path_to_trash in self.to_remove() {
-            println!("Attempting to remove {}/{}", path.display(), path_to_trash);
+            let path_to_trash = path.join(path_to_trash);
+            println!("Attempting to remove {}", path_to_trash.display());
             fs::remove_dir_all(path_to_trash)?;
         }
 
-        cd_into(&previous_folder)?;
         Ok(())
     }
 }
